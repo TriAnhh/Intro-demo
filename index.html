@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#101b33">
+    <title>VGU | Online Retail Analytics</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --navy: #101b33;
+            --navy-soft: #1a2948;
+            --blue: #4263eb;
+            --blue-light: #edf1ff;
+            --cyan: #16a6b6;
+            --green: #15966a;
+            --red: #d94f5c;
+            --amber: #d8871b;
+            --ink: #1d2939;
+            --muted: #667085;
+            --line: #e6eaf0;
+            --surface: #ffffff;
+            --canvas: #f5f7fb;
+            --shadow: 0 8px 26px rgba(24, 39, 75, .06);
+        }
+
+        * { box-sizing: border-box; }
+        [hidden] { display: none !important; }
+        body {
+            margin: 0;
+            color: var(--ink);
+            background: var(--canvas);
+            font: 14px/1.5 Inter, "Segoe UI", Arial, sans-serif;
+        }
+        button, input, select { font: inherit; }
+        button { cursor: pointer; }
+        .app { display: flex; min-height: 100vh; }
+        .sidebar {
+            position: fixed;
+            inset: 0 auto 0 0;
+            z-index: 5;
+            display: flex;
+            width: 248px;
+            flex-direction: column;
+            padding: 22px 14px;
+            color: #dbe3f3;
+            background: var(--navy);
+        }
+        .brand { display: flex; align-items: center; gap: 12px; padding: 2px 9px 28px; }
+        .brand img { width: 49px; height: 42px; object-fit: contain; border-radius: 8px; background: #fff; padding: 4px; }
+        .brand-name { color: #fff; font-size: 13px; font-weight: 750; line-height: 1.3; }
+        .brand-name span { display: block; margin-top: 3px; color: #91a1c0; font-size: 10px; font-weight: 500; letter-spacing: .08em; }
+        .nav-label { padding: 8px 11px; color: #7f8eab; font-size: 10px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+        .nav-list { display: grid; gap: 5px; }
+        .nav-button {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            border: 0;
+            border-radius: 9px;
+            padding: 11px 12px;
+            color: #b6c1d5;
+            background: transparent;
+            text-align: left;
+            transition: background .18s, color .18s;
+        }
+        .nav-button:hover { color: #fff; background: rgba(255,255,255,.07); }
+        .nav-button.active { color: #fff; background: #293a61; box-shadow: inset 3px 0 #8298ff; }
+        .nav-icon { display: grid; width: 20px; place-items: center; font-size: 17px; }
+        .sidebar-footer { margin-top: auto; border-top: 1px solid rgba(255,255,255,.1); padding: 16px 9px 2px; color: #aab6cb; font-size: 11px; }
+        .sidebar-footer strong { display: block; margin-bottom: 4px; color: #fff; font-size: 12px; }
+        .main { width: calc(100% - 248px); min-width: 0; margin-left: 248px; }
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 4;
+            display: flex;
+            min-height: 70px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            border-bottom: 1px solid var(--line);
+            padding: 12px 34px;
+            background: rgba(255,255,255,.94);
+            backdrop-filter: blur(12px);
+        }
+        .crumb { color: var(--muted); font-size: 12px; }
+        .crumb strong { color: var(--ink); }
+        .top-actions { display: flex; align-items: center; gap: 12px; }
+        .demo-tag, .live-tag { display: inline-flex; align-items: center; gap: 7px; border-radius: 99px; padding: 6px 10px; font-size: 11px; font-weight: 700; }
+        .demo-tag { color: #82530a; background: #fff5d8; }
+        .live-tag { color: #087c56; background: #e8f7f0; }
+        .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #18a66f; box-shadow: 0 0 0 3px rgba(24,166,111,.13); }
+        .avatar { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; color: #344a94; background: #e9edff; font-size: 11px; font-weight: 800; }
+        .content { width: min(1380px, 100%); margin: 0 auto; padding: 30px 34px 48px; }
+        .view { display: none; animation: appear .2s ease-out; }
+        .view.active { display: block; }
+        @keyframes appear { from { opacity: .35; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        .page-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+        h1 { margin: 0 0 6px; font-size: clamp(23px, 2.2vw, 29px); letter-spacing: -.04em; line-height: 1.2; }
+        .subheading { margin: 0; color: var(--muted); }
+        .heading-actions { display: flex; align-items: center; gap: 9px; }
+        .button {
+            display: inline-flex;
+            min-height: 38px;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 8px 13px;
+            color: #344054;
+            background: #fff;
+            font-size: 12px;
+            font-weight: 650;
+            transition: transform .15s, background .15s, box-shadow .15s;
+        }
+        .button:hover { background: #f8f9fc; box-shadow: 0 3px 10px rgba(20,33,61,.07); transform: translateY(-1px); }
+        .button.primary { border-color: var(--blue); color: #fff; background: var(--blue); }
+        .button.primary:hover { background: #3453d1; }
+        .button.dark { border-color: var(--navy); color: #fff; background: var(--navy); }
+        .button:disabled { cursor: wait; opacity: .65; transform: none; }
+        .select, .field-input {
+            width: 100%;
+            min-height: 42px;
+            border: 1px solid #d5dce7;
+            border-radius: 8px;
+            padding: 9px 11px;
+            color: var(--ink);
+            background: #fff;
+            outline: none;
+        }
+        .select:focus, .field-input:focus { border-color: #8298ff; box-shadow: 0 0 0 3px rgba(66,99,235,.12); }
+        .card { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
+        .card-pad { padding: 20px; }
+        .card-title { margin: 0; font-size: 14px; font-weight: 750; letter-spacing: -.01em; }
+        .card-caption { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
+        .kpi-card { position: relative; min-height: 135px; padding: 17px 18px; transition: transform .18s, box-shadow .18s; }
+        .kpi-card:hover { z-index: 1; box-shadow: 0 12px 30px rgba(24,39,75,.12); transform: translateY(-3px); }
+        .kpi-label { display: flex; align-items: center; justify-content: space-between; gap: 5px; color: var(--muted); font-size: 11px; font-weight: 650; }
+        .info-dot { display: inline-grid; width: 17px; height: 17px; place-items: center; border: 1px solid #d5dce7; border-radius: 50%; color: #7d8898; font-size: 10px; }
+        .kpi-value { margin: 12px 0 8px; font-size: clamp(22px, 2.1vw, 29px); font-weight: 780; letter-spacing: -.05em; }
+        .kpi-foot { color: var(--muted); font-size: 10px; }
+        .change { margin-right: 4px; color: var(--green); font-weight: 750; }
+        .change.negative { color: var(--red); }
+        .kpi-card[data-tip]:hover::after {
+            position: absolute;
+            z-index: 3;
+            top: calc(100% - 3px);
+            left: 18px;
+            width: min(270px, calc(100% - 36px));
+            border-radius: 7px;
+            padding: 9px 11px;
+            color: white;
+            background: #24334e;
+            content: attr(data-tip);
+            font-size: 10px;
+            font-weight: 500;
+            line-height: 1.45;
+            box-shadow: 0 8px 18px rgba(0,0,0,.15);
+        }
+        .grid-two { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(290px, .95fr); gap: 16px; }
+        .grid-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+        .chart-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+        .chart-total { margin-top: 16px; font-size: 25px; font-weight: 760; letter-spacing: -.04em; }
+        .chart-total span { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; font-weight: 450; letter-spacing: 0; }
+        .chart-wrap { margin-top: 14px; }
+        .line-chart { display: block; width: 100%; height: 205px; overflow: visible; }
+        .chart-labels { display: flex; justify-content: space-between; padding: 3px 4px 0 34px; color: #8792a2; font-size: 10px; }
+        .rfm-list { display: grid; gap: 19px; margin-top: 21px; }
+        .rfm-row { display: grid; grid-template-columns: 1fr auto; gap: 7px 12px; align-items: center; }
+        .rfm-name { font-size: 12px; font-weight: 700; }
+        .rfm-count { color: #344054; font-size: 11px; font-weight: 750; }
+        .rfm-desc { color: var(--muted); font-size: 10px; }
+        .progress { grid-column: 1 / -1; height: 7px; overflow: hidden; border-radius: 20px; background: #edf0f5; }
+        .progress span { display: block; height: 100%; border-radius: inherit; }
+        .section-gap { margin-top: 16px; }
+        .insight { display: flex; gap: 12px; border: 1px solid #dfe7ff; border-radius: 10px; padding: 14px 16px; color: #344a85; background: #f3f6ff; font-size: 11px; }
+        .insight-icon { font-size: 18px; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { padding: 12px 13px; color: #7a8595; background: #fafbfc; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }
+        td { border-top: 1px solid #eef0f4; padding: 13px; font-size: 11px; }
+        .product-name { font-weight: 700; }
+        .category { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+        .rate { display: inline-flex; align-items: center; gap: 7px; font-weight: 750; white-space: nowrap; }
+        .rate-track { width: 68px; height: 6px; overflow: hidden; border-radius: 10px; background: #edf0f5; }
+        .rate-track span { display: block; height: 100%; border-radius: inherit; background: var(--red); }
+        .reason-layout { display: grid; grid-template-columns: 160px 1fr; align-items: center; gap: 20px; min-height: 215px; }
+        .donut { display: grid; width: 150px; height: 150px; place-items: center; border-radius: 50%; background: conic-gradient(#4263eb 0 34%, #16a6b6 34% 59%, #f0ad4e 59% 77%, #d87587 77% 90%, #9a7ce8 90% 100%); }
+        .donut-hole { display: grid; width: 92px; height: 92px; place-content: center; border-radius: 50%; background: #fff; text-align: center; }
+        .donut-hole strong { font-size: 22px; }
+        .donut-hole span { color: var(--muted); font-size: 9px; }
+        .legend { display: grid; gap: 10px; }
+        .legend-row { display: flex; justify-content: space-between; gap: 12px; color: #4b5565; font-size: 10px; }
+        .legend-name { display: flex; align-items: center; gap: 7px; }
+        .legend-swatch { width: 8px; height: 8px; border-radius: 3px; }
+        .cross-list { display: grid; gap: 9px; margin-top: 16px; }
+        .cross-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid #edf0f4; border-radius: 9px; padding: 11px 12px; }
+        .cross-pair { font-size: 11px; font-weight: 700; }
+        .cross-pair span { margin: 0 6px; color: var(--blue); }
+        .cross-meta { margin-top: 4px; color: var(--muted); font-size: 10px; }
+        .lift { flex: 0 0 auto; border-radius: 6px; padding: 5px 7px; color: #087c56; background: #e8f7f0; font-size: 10px; font-weight: 750; }
+        .form-layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr); gap: 18px; align-items: start; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 20px; }
+        .form-field label { display: block; margin-bottom: 6px; font-size: 11px; font-weight: 700; }
+        .form-hint { display: block; margin-top: 5px; color: var(--muted); font-size: 10px; }
+        .result-card { min-height: 330px; overflow: hidden; }
+        .result-top { padding: 19px 20px; color: white; background: linear-gradient(120deg, #172746, #314a78); }
+        .result-top .card-caption { color: #c3cee2; }
+        .result-empty { display: grid; min-height: 237px; place-content: center; padding: 24px; color: var(--muted); text-align: center; }
+        .result-empty .empty-icon { margin-bottom: 8px; font-size: 34px; }
+        .result-content { padding: 20px; }
+        .risk-score-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+        .risk-score { font-size: 45px; font-weight: 800; letter-spacing: -.06em; line-height: 1; }
+        .risk-score small { font-size: 18px; }
+        .risk-badge { border-radius: 99px; padding: 7px 10px; font-size: 10px; font-weight: 800; }
+        .risk-badge.high { color: #a92734; background: #ffeaec; }
+        .risk-badge.medium { color: #94600e; background: #fff3da; }
+        .risk-badge.low { color: #087c56; background: #e8f7f0; }
+        .risk-track { height: 9px; margin: 16px 0 10px; overflow: hidden; border-radius: 20px; background: #edf0f5; }
+        .risk-track span { display: block; height: 100%; border-radius: inherit; background: var(--red); transition: width .6s ease; }
+        .risk-note { color: var(--muted); font-size: 10px; }
+        .feature-list { display: grid; gap: 9px; margin: 17px 0 0; padding: 0; list-style: none; }
+        .feature-list li { display: flex; justify-content: space-between; gap: 10px; border-top: 1px solid #eef0f4; padding-top: 9px; color: #566174; font-size: 10px; }
+        .feature-list strong { color: var(--ink); }
+        .auto-analysis { padding: 20px; }
+        .auto-analysis-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+        .auto-orders { display: grid; gap: 10px; margin-top: 17px; }
+        .auto-order { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; border: 1px solid #edf0f4; border-radius: 9px; padding: 12px 14px; }
+        .auto-order-name { font-size: 11px; font-weight: 750; }
+        .auto-order-meta { margin-top: 4px; color: var(--muted); font-size: 10px; }
+        .auto-order-result { display: flex; align-items: center; gap: 9px; }
+        .auto-score { font-size: 17px; font-weight: 800; }
+        .auto-score small { font-size: 10px; }
+        .auto-analysis-status { margin-top: 12px; color: var(--muted); font-size: 10px; }
+        .manual-check { margin-top: 14px; border: 1px solid var(--line); border-radius: 11px; background: #fff; box-shadow: var(--shadow); }
+        .manual-check summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 17px; font-size: 11px; font-weight: 750; cursor: pointer; list-style-position: inside; }
+        .manual-check[open] summary { border-bottom: 1px solid var(--line); }
+        .manual-check-body { padding: 16px; }
+        .manual-check .form-layout { grid-template-columns: minmax(0, 1fr) minmax(260px, .7fr); gap: 12px; }
+        .manual-check .form-layout > .card { box-shadow: none; }
+        .manual-check .form-grid { gap: 10px; }
+        .notice { margin-top: 14px; border: 1px solid #f3dfaa; border-radius: 8px; padding: 10px 12px; color: #795a1b; background: #fff9e9; font-size: 10px; }
+        .realtime-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 17px; border: 1px solid #cdebdc; border-radius: 11px; padding: 15px 18px; background: #f0faf5; }
+        .realtime-banner h2 { margin: 0 0 3px; font-size: 13px; }
+        .realtime-banner p { margin: 0; color: #5c7669; font-size: 10px; }
+        .realtime-controls { display: flex; flex-wrap: wrap; gap: 8px; }
+        .event-list { display: grid; gap: 0; }
+        .event-row { display: grid; grid-template-columns: 14px 1fr auto; align-items: center; gap: 10px; border-top: 1px solid #eef0f4; padding: 12px 0; font-size: 10px; }
+        .event-marker { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+        .event-row time { color: var(--muted); white-space: nowrap; }
+        .updated { margin-top: 10px; color: var(--muted); font-size: 10px; text-align: right; }
+        .toast { position: fixed; right: 22px; bottom: 20px; z-index: 10; max-width: min(380px, calc(100vw - 32px)); border-radius: 9px; padding: 12px 15px; color: white; background: #172746; box-shadow: 0 10px 30px rgba(12,23,45,.22); font-size: 11px; opacity: 0; pointer-events: none; transform: translateY(10px); transition: .2s; }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .footer-note { margin-top: 16px; color: #8792a2; font-size: 10px; text-align: center; }
+        .catalog-layout { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; }
+        .catalog-main { min-width: 0; }
+        .catalog-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 14px; }
+        .catalog-search { flex: 1; max-width: 340px; }
+        .catalog-filter { width: 170px; }
+        .catalog-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+        .store-card { overflow: hidden; transition: transform .18s, box-shadow .18s; }
+        .store-card:hover { box-shadow: 0 12px 30px rgba(24,39,75,.12); transform: translateY(-3px); }
+        .store-image { position: relative; display: grid; aspect-ratio: 1.25; place-items: center; overflow: hidden; background: linear-gradient(135deg, #edf1ff, #dce5ff); }
+        .store-image img { width: 100%; height: 100%; object-fit: cover; }
+        .store-image-emoji { font-size: 62px; }
+        .store-badge { position: absolute; top: 10px; left: 10px; border-radius: 99px; padding: 5px 8px; color: #344a94; background: rgba(255,255,255,.92); font-size: 9px; font-weight: 800; }
+        .store-info { padding: 13px; }
+        .store-title { min-height: 38px; margin: 0; font-size: 12px; font-weight: 750; line-height: 1.5; }
+        .store-rating { margin-top: 6px; color: #d8871b; font-size: 10px; }
+        .store-rating span { margin-left: 4px; color: var(--muted); }
+        .store-price-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 9px; }
+        .store-price { color: #d94f5c; font-size: 15px; font-weight: 800; }
+        .store-stock { color: var(--muted); font-size: 9px; white-space: nowrap; }
+        .store-tags, .tag-editor { display: flex; flex-wrap: wrap; gap: 5px; }
+        .store-tags { min-height: 25px; margin-top: 9px; }
+        .product-tag { display: inline-flex; align-items: center; gap: 4px; border-radius: 99px; padding: 4px 7px; color: #344a85; background: #edf1ff; font-size: 9px; font-weight: 650; }
+        .product-tag button { border: 0; padding: 0; color: inherit; background: none; font-size: 12px; line-height: 1; }
+        .import-card { padding: 17px; }
+        .import-heading { display: flex; align-items: center; gap: 9px; }
+        .import-heading-icon { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 9px; color: #fff; background: var(--blue); font-size: 16px; }
+        .import-fields { display: grid; gap: 12px; margin-top: 16px; }
+        .import-fields .form-field label { font-size: 10px; }
+        .import-fields .field-input, .import-fields .select { min-height: 38px; padding: 8px 10px; font-size: 11px; }
+        .import-fields textarea.field-input { min-height: 74px; resize: vertical; }
+        .upload-box { display: grid; min-height: 78px; place-items: center; border: 1px dashed #cbd4e2; border-radius: 8px; padding: 10px; color: var(--muted); background: #fafbff; font-size: 10px; text-align: center; cursor: pointer; }
+        .upload-box input { width: 100%; margin-top: 7px; font-size: 9px; }
+        .tag-editor { min-height: 35px; align-items: center; border: 1px solid #e6eaf0; border-radius: 8px; padding: 6px; }
+        .tag-empty { color: var(--muted); font-size: 10px; }
+        .tag-add-row { display: flex; gap: 6px; margin-top: 7px; }
+        .tag-add-row .field-input { min-height: 33px; }
+        .tag-add-row .button { min-height: 33px; padding: 6px 9px; }
+        .ai-tag-button { width: 100%; margin-top: 8px; }
+        .import-submit { width: 100%; margin-top: 14px; }
+        .import-note { margin: 10px 0 0; color: var(--muted); font-size: 9px; line-height: 1.5; }
+        .catalog-empty { grid-column: 1 / -1; padding: 35px 20px; color: var(--muted); text-align: center; }
+        .import-dialog { width: min(620px, calc(100vw - 28px)); max-width: none; max-height: min(90vh, 900px); overflow: auto; border: 0; border-radius: 14px; padding: 0; color: var(--ink); background: var(--surface); box-shadow: 0 24px 80px rgba(16,27,51,.25); }
+        .import-dialog::backdrop { background: rgba(16,27,51,.55); backdrop-filter: blur(3px); }
+        .import-dialog .import-card { padding: 22px; }
+        .import-dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .dialog-close { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: #fff; font-size: 20px; }
+        .dialog-close:hover { color: var(--ink); background: #f8f9fc; }
+
+        @media (min-width: 1051px) and (max-width: 1300px) {
+            .catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 1050px) {
+            .sidebar { width: 218px; }
+            .main { width: calc(100% - 218px); margin-left: 218px; }
+            .content, .topbar { padding-right: 22px; padding-left: 22px; }
+            .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .grid-two { grid-template-columns: minmax(0, 1fr); }
+            .form-layout { grid-template-columns: minmax(0, 1fr); }
+            .manual-check .form-layout { grid-template-columns: minmax(0, 1fr); }
+        }
+        @media (max-width: 700px) {
+            .sidebar { position: static; width: 100%; padding: 9px 10px 10px; }
+            .app { display: block; }
+            .brand { padding: 0 7px 9px; }
+            .brand img { width: 37px; height: 32px; }
+            .nav-label, .sidebar-footer { display: none; }
+            .nav-list { display: flex; overflow-x: auto; gap: 5px; }
+            .nav-button { flex: 0 0 auto; width: auto; padding: 8px 10px; font-size: 10px; }
+            .nav-icon { font-size: 14px; }
+            .main { width: 100%; margin: 0; }
+            .topbar { min-height: 51px; padding: 8px 15px; }
+            .content { padding: 23px 15px 36px; }
+            .page-heading { flex-direction: column; }
+            .heading-actions { width: 100%; }
+            #view-catalog .heading-actions { flex-wrap: wrap; }
+            .kpi-grid { gap: 9px; }
+            .kpi-card { min-height: 121px; padding: 13px; }
+            .kpi-value { font-size: 22px; }
+            .grid-three { grid-template-columns: 1fr; }
+            .catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+            .catalog-toolbar { align-items: stretch; flex-direction: column; }
+            .catalog-search, .catalog-filter { width: 100%; max-width: none; }
+            .reason-layout { grid-template-columns: 130px 1fr; gap: 12px; }
+            .donut { width: 125px; height: 125px; }
+            .donut-hole { width: 78px; height: 78px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .realtime-banner { align-items: flex-start; flex-direction: column; }
+        }
+        @media (max-width: 390px) {
+            .nav-button { gap: 6px; padding: 8px; }
+            .nav-icon { display: none; }
+            .kpi-label { font-size: 10px; }
+            .reason-layout { grid-template-columns: 1fr; justify-items: center; }
+            .legend { width: 100%; }
+            .heading-actions .button { flex: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="brand">
+                <img src="images.png" alt="Logo VGU">
+                <div class="brand-name">ONLINE RETAIL<span>ORDERS &amp; PRODUCT ANALYTICS</span></div>
+            </div>
+            <div class="nav-label">Phân tích dữ liệu</div>
+            <nav class="nav-list" aria-label="Điều hướng chính">
+                <button class="nav-button active" type="button" data-view="overview"><span class="nav-icon">▦</span>Tổng quan</button>
+                <button class="nav-button" type="button" data-view="returns"><span class="nav-icon">↩</span>Trả hàng &amp; sản phẩm</button>
+                <button class="nav-button" type="button" data-view="catalog"><span class="nav-icon">▤</span>Danh mục sản phẩm</button>
+                <button class="nav-button" type="button" data-view="ai"><span class="nav-icon">✦</span>Dự đoán rủi ro</button>
+                <button class="nav-button" type="button" data-view="realtime"><span class="nav-icon">◉</span>Cập nhật realtime</button>
+            </nav>
+            <div class="sidebar-footer">
+                <strong>VGU · Admin Dashboard</strong>
+                Online Retail Orders, Returns and Product Analytics
+            </div>
+        </aside>
+
+        <div class="main">
+            <header class="topbar">
+                <div class="crumb">VGU Admin <span aria-hidden="true">/</span> <strong id="breadcrumb">Tổng quan kinh doanh</strong></div>
+                <div class="top-actions">
+                    <span class="demo-tag"><span aria-hidden="true">●</span> Chế độ demo · dữ liệu mẫu</span>
+                    <div class="avatar" title="Frontend Demo">FE</div>
+                </div>
+            </header>
+
+            <main class="content">
+                <section id="view-overview" class="view active" aria-labelledby="overview-title">
+                    <div class="page-heading">
+                        <div>
+                            <h1 id="overview-title">Tổng quan kinh doanh</h1>
+                            <p class="subheading">Theo dõi hiệu quả bán hàng và sức khỏe khách hàng.</p>
+                        </div>
+                        <div class="heading-actions">
+                            <select class="select" style="width:auto" aria-label="Khoảng thời gian">
+                                <option>30 ngày gần nhất</option>
+                                <option>7 ngày gần nhất</option>
+                                <option>Hôm nay</option>
+                            </select>
+                            <button class="button" type="button" data-action="refresh">↻ Làm mới</button>
+                        </div>
+                    </div>
+
+                    <div class="kpi-grid">
+                        <article class="card kpi-card" data-tip="Doanh thu sau khi trừ các khoản hoàn tiền và đơn trả hàng trong kỳ.">
+                            <div class="kpi-label">Doanh thu ròng <span class="info-dot">i</span></div>
+                            <div class="kpi-value" id="net-revenue">₫2.48 tỷ</div>
+                            <div class="kpi-foot"><span class="change" id="revenue-change">↑ 12,8%</span>so với kỳ trước</div>
+                        </article>
+                        <article class="card kpi-card" data-tip="Tỷ lệ đơn hàng có phát sinh yêu cầu trả hàng trên tổng số đơn.">
+                            <div class="kpi-label">Tỷ lệ trả hàng <span class="info-dot">i</span></div>
+                            <div class="kpi-value" id="return-rate">8,4%</div>
+                            <div class="kpi-foot"><span class="change negative" id="return-change">↑ 0,6%</span>so với kỳ trước</div>
+                        </article>
+                        <article class="card kpi-card" data-tip="Tổng số đơn hàng được ghi nhận trong khoảng thời gian đang xem.">
+                            <div class="kpi-label">Tổng đơn hàng <span class="info-dot">i</span></div>
+                            <div class="kpi-value" id="order-count">1.284</div>
+                            <div class="kpi-foot"><span class="change">↑ 9,2%</span>so với kỳ trước</div>
+                        </article>
+                        <article class="card kpi-card" data-tip="Tổng số khách hàng được ghi nhận trong khoảng thời gian đang xem.">
+                            <div class="kpi-label">Số lượng khách <span class="info-dot">i</span></div>
+                            <div class="kpi-value" id="customer-count">1.026</div>
+                            <div class="kpi-foot"><span class="change">↑ 3,1%</span>so với kỳ trước</div>
+                        </article>
+                    </div>
+
+                    <div class="grid-two">
+                        <article class="card card-pad">
+                            <div class="chart-head">
+                                <div>
+                                    <h2 class="card-title">Xu hướng doanh thu ròng</h2>
+                                    <p class="card-caption">Doanh thu theo tuần · 30 ngày gần nhất</p>
+                                    <div class="chart-total" id="chart-total">₫2.48 tỷ<span>Tổng doanh thu ròng trong kỳ</span></div>
+                                </div>
+                                <span class="live-tag"><span class="live-dot"></span>Đang theo dõi</span>
+                            </div>
+                            <div class="chart-wrap">
+                                <svg class="line-chart" viewBox="0 0 720 205" role="img" aria-label="Biểu đồ xu hướng doanh thu">
+                                    <defs>
+                                        <linearGradient id="area-fill" x1="0" x2="0" y1="0" y2="1">
+                                            <stop offset="0%" stop-color="#4263eb" stop-opacity=".19"/>
+                                            <stop offset="100%" stop-color="#4263eb" stop-opacity="0"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <g stroke="#edf0f5" stroke-width="1">
+                                        <line x1="48" y1="24" x2="710" y2="24"/><line x1="48" y1="70" x2="710" y2="70"/>
+                                        <line x1="48" y1="116" x2="710" y2="116"/><line x1="48" y1="162" x2="710" y2="162"/>
+                                    </g>
+                                    <g fill="#8a94a5" font-size="10">
+                                        <text x="0" y="27">₫900m</text><text x="0" y="73">₫600m</text>
+                                        <text x="0" y="119">₫300m</text><text x="24" y="165">₫0</text>
+                                    </g>
+                                    <path id="chart-area" d="M48 132 L158 105 L268 119 L378 72 L488 89 L598 49 L710 58 L710 162 L48 162 Z" fill="url(#area-fill)"/>
+                                    <polyline id="chart-line" points="48,132 158,105 268,119 378,72 488,89 598,49 710,58" fill="none" stroke="#4263eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <g id="chart-points" fill="#fff" stroke="#4263eb" stroke-width="3">
+                                        <circle cx="48" cy="132" r="4"/><circle cx="158" cy="105" r="4"/><circle cx="268" cy="119" r="4"/>
+                                        <circle cx="378" cy="72" r="4"/><circle cx="488" cy="89" r="4"/><circle cx="598" cy="49" r="4"/><circle cx="710" cy="58" r="4"/>
+                                    </g>
+                                </svg>
+                                <div class="chart-labels"><span>01/10</span><span>06/10</span><span>11/10</span><span>16/10</span><span>21/10</span><span>26/10</span><span>Hôm nay</span></div>
+                            </div>
+                        </article>
+
+                        <article class="card card-pad">
+                            <div class="chart-head">
+                                <div><h2 class="card-title">Phân khúc khách hàng RFM</h2><p class="card-caption">Recency · Frequency · Monetary</p></div>
+                                <span class="info-dot" title="Phân nhóm theo lần mua gần nhất, tần suất và giá trị mua">i</span>
+                            </div>
+                            <div class="rfm-list">
+                                <div class="rfm-row">
+                                    <div><div class="rfm-name">Khách hàng VIP</div><div class="rfm-desc">Mua gần đây, thường xuyên, chi tiêu cao</div></div><div class="rfm-count">186 · 14,5%</div>
+                                    <div class="progress"><span style="width:72%;background:#4263eb"></span></div>
+                                </div>
+                                <div class="rfm-row">
+                                    <div><div class="rfm-name">Khách hàng trung thành</div><div class="rfm-desc">Tần suất mua và giá trị ổn định</div></div><div class="rfm-count">412 · 32,1%</div>
+                                    <div class="progress"><span style="width:88%;background:#16a6b6"></span></div>
+                                </div>
+                                <div class="rfm-row">
+                                    <div><div class="rfm-name">Khách hàng tiềm năng</div><div class="rfm-desc">Có tương tác, cần khuyến khích mua lại</div></div><div class="rfm-count">391 · 30,5%</div>
+                                    <div class="progress"><span style="width:76%;background:#f0ad4e"></span></div>
+                                </div>
+                                <div class="rfm-row">
+                                    <div><div class="rfm-name">Nguy cơ rời bỏ</div><div class="rfm-desc">Đã lâu chưa quay lại mua hàng</div></div><div class="rfm-count">295 · 23,0%</div>
+                                    <div class="progress"><span style="width:58%;background:#d94f5c"></span></div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                    <div class="insight section-gap"><span class="insight-icon">✦</span><div><strong>Gợi ý hành động:</strong> Nhóm khách hàng có nguy cơ rời bỏ chiếm 23%. Có thể ưu tiên chiến dịch chăm sóc và ưu đãi cá nhân hóa cho nhóm này.</div></div>
+                    <p class="footer-note">Dữ liệu minh họa phục vụ trình diễn giao diện; thay bằng dữ liệu API khi Backend cung cấp endpoint.</p>
+                </section>
+
+                <section id="view-returns" class="view" aria-labelledby="returns-title">
+                    <div class="page-heading">
+                        <div><h1 id="returns-title">Trả hàng &amp; phân tích sản phẩm</h1><p class="subheading">Nhận diện nguyên nhân hoàn trả và cơ hội bán kèm.</p></div>
+                        <div class="heading-actions"><select class="select" style="width:auto" aria-label="Khoảng thời gian phân tích"><option>30 ngày gần nhất</option><option>90 ngày gần nhất</option></select></div>
+                    </div>
+                    <div class="grid-two">
+                        <article class="card">
+                            <div class="card-pad" style="padding-bottom:10px"><h2 class="card-title">Top 10 sản phẩm có tỷ lệ trả hàng cao</h2><p class="card-caption">Tỷ lệ trả hàng trên số lượng bán · dữ liệu mẫu</p></div>
+                            <div class="table-wrap">
+                                <table>
+                                    <thead><tr><th>Sản phẩm</th><th>Đã bán</th><th>Trả hàng</th><th>Tỷ lệ trả</th></tr></thead>
+                                    <tbody id="products-table">
+                                        <tr><td><span class="product-name">Áo khoác Urban Fit</span><span class="category">Thời trang · SKU UF-204</span></td><td>284</td><td>71</td><td><span class="rate">25,0% <span class="rate-track"><span style="width:100%"></span></span></span></td></tr>
+                                        <tr><td><span class="product-name">Giày chạy bộ Aero</span><span class="category">Giày dép · SKU AR-118</span></td><td>391</td><td>82</td><td><span class="rate">21,0% <span class="rate-track"><span style="width:84%"></span></span></span></td></tr>
+                                        <tr><td><span class="product-name">Quần denim Classic</span><span class="category">Thời trang · SKU DC-032</span></td><td>327</td><td>59</td><td><span class="rate">18,0% <span class="rate-track"><span style="width:72%"></span></span></span></td></tr>
+                                        <tr><td><span class="product-name">Túi đeo chéo Metro</span><span class="category">Phụ kiện · SKU MT-087</span></td><td>215</td><td>34</td><td><span class="rate">15,8% <span class="rate-track"><span style="width:63%"></span></span></span></td></tr>
+                                        <tr><td><span class="product-name">Áo sơ mi Linen</span><span class="category">Thời trang · SKU LN-052</span></td><td>362</td><td>54</td><td><span class="rate">14,9% <span class="rate-track"><span style="width:60%"></span></span></span></td></tr>
+                                        <tr><td><span class="product-name">Balo Everyday</span><span class="category">Phụ kiện · SKU ED-305</span></td><td>188</td><td>27</td><td><span class="rate">14,4% <span class="rate-track"><span style="width:58%"></span></span></span></td></tr>
+                                        <tr><td><span class="product-name">Giày sneaker Court</span><span class="category">Giày dép · SKU CT-211</span></td><td>306</td><td>42</td><td><span class="rate">13,7% <span class="rate-track"><span style="width:55%"></span></span></span></td></tr>
+                                        <tr><td><span class="product-name">Váy Midi Floral</span><span class="category">Thời trang · SKU MF-419</span></td><td>174</td><td>23</td><td><span class="rate">13,2% <span class="rate-track"><span style="width:53%"></span></span></span></td></tr>
+                                        <tr><td><span class="product-name">Áo thun Essential</span><span class="category">Thời trang · SKU ES-100</span></td><td>522</td><td>66</td><td><span class="rate">12,6% <span class="rate-track"><span style="width:50%"></span></span></span></td></tr>
+                                        <tr><td><span class="product-name">Ví da Minimal</span><span class="category">Phụ kiện · SKU MN-060</span></td><td>249</td><td>30</td><td><span class="rate">12,0% <span class="rate-track"><span style="width:48%"></span></span></span></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </article>
+                        <article class="card card-pad">
+                            <h2 class="card-title">Lý do trả hàng</h2><p class="card-caption">Tỷ trọng trên tổng yêu cầu trả hàng</p>
+                            <div class="reason-layout">
+                                <div class="donut" role="img" aria-label="Biểu đồ lý do trả hàng"><div class="donut-hole"><strong>100%</strong><span>lý do ghi nhận</span></div></div>
+                                <div class="legend">
+                                    <div class="legend-row"><span class="legend-name"><i class="legend-swatch" style="background:#4263eb"></i>Không vừa kích cỡ</span><strong>34%</strong></div>
+                                    <div class="legend-row"><span class="legend-name"><i class="legend-swatch" style="background:#16a6b6"></i>Khác mô tả</span><strong>25%</strong></div>
+                                    <div class="legend-row"><span class="legend-name"><i class="legend-swatch" style="background:#f0ad4e"></i>Đổi ý</span><strong>18%</strong></div>
+                                    <div class="legend-row"><span class="legend-name"><i class="legend-swatch" style="background:#d87587"></i>Lỗi / hư hỏng</span><strong>13%</strong></div>
+                                    <div class="legend-row"><span class="legend-name"><i class="legend-swatch" style="background:#9a7ce8"></i>Lý do khác</span><strong>10%</strong></div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                    <article class="card card-pad section-gap">
+                        <div class="chart-head"><div><h2 class="card-title">Gợi ý sản phẩm bán kèm</h2><p class="card-caption">Market Basket Analysis · các cặp sản phẩm thường xuất hiện cùng đơn</p></div><span class="live-tag">Cross-selling</span></div>
+                        <div class="grid-three cross-list">
+                            <div class="cross-item"><div><div class="cross-pair">Giày chạy bộ Aero <span>+</span> Tất thể thao</div><div class="cross-meta">Tỷ lệ mua cùng 18% · 142 đơn</div></div><span class="lift">+24% cơ hội</span></div>
+                            <div class="cross-item"><div><div class="cross-pair">Áo khoác Urban Fit <span>+</span> Áo thun Essential</div><div class="cross-meta">Tỷ lệ mua cùng 14% · 98 đơn</div></div><span class="lift">+19% cơ hội</span></div>
+                            <div class="cross-item"><div><div class="cross-pair">Balo Everyday <span>+</span> Bình nước giữ nhiệt</div><div class="cross-meta">Tỷ lệ mua cùng 11% · 76 đơn</div></div><span class="lift">+16% cơ hội</span></div>
+                        </div>
+                    </article>
+                    <p class="footer-note">Top sản phẩm, lý do trả hàng và cặp bán kèm là dữ liệu mẫu để minh họa giao diện.</p>
+                </section>
+
+                <section id="view-catalog" class="view" aria-labelledby="catalog-title">
+                    <div class="page-heading">
+                        <div>
+                            <h1 id="catalog-title">Cửa hàng sản phẩm</h1>
+                            <p class="subheading">Quản lý danh mục và xem sản phẩm theo phong cách sàn thương mại điện tử.</p>
+                        </div>
+                        <div class="heading-actions"><span class="demo-tag">▤ Danh mục demo</span><button id="open-product-import" class="button primary" type="button">＋ Import sản phẩm</button></div>
+                    </div>
+                    <div class="catalog-layout">
+                        <div class="catalog-main">
+                            <div class="catalog-toolbar">
+                                <input id="catalog-search" class="field-input catalog-search" type="search" placeholder="⌕  Tìm kiếm sản phẩm..." aria-label="Tìm sản phẩm">
+                                <select id="catalog-filter" class="select catalog-filter" aria-label="Lọc theo danh mục">
+                                    <option value="">Tất cả danh mục</option>
+                                    <option value="thoi-trang">Thời trang</option><option value="giay-dep">Giày dép</option>
+                                    <option value="phu-kien">Phụ kiện</option><option value="dien-tu">Điện tử</option>
+                                    <option value="lam-dep">Làm đẹp</option><option value="nha-cua">Nhà cửa</option>
+                                </select>
+                            </div>
+                            <div id="catalog-count" class="card-caption" style="margin:0 0 11px"></div>
+                            <div id="product-catalog" class="catalog-grid" aria-live="polite"></div>
+                            <p class="footer-note">Sản phẩm hiển thị là dữ liệu mẫu hoặc dữ liệu vừa nhập trong phiên trình duyệt này.</p>
+                        </div>
+                    </div>
+                    <dialog id="product-import-dialog" class="import-dialog" aria-labelledby="import-title">
+                        <form id="product-import-form" class="import-card">
+                            <div class="import-dialog-header">
+                                <div class="import-heading">
+                                    <span class="import-heading-icon" aria-hidden="true">＋</span>
+                                    <div><h2 id="import-title" class="card-title">Import sản phẩm</h2><p class="card-caption">Thêm sản phẩm vào cửa hàng</p></div>
+                                </div>
+                                <button id="close-product-import" class="dialog-close" type="button" aria-label="Đóng cửa sổ import">×</button>
+                            </div>
+                            <div class="import-fields">
+                                <div class="form-field"><label for="import-name">Tên sản phẩm *</label><input id="import-name" class="field-input" maxlength="90" placeholder="Ví dụ: Áo khoác Urban Fit" required></div>
+                                <div class="form-field"><label for="import-category">Danh mục *</label>
+                                    <select id="import-category" class="select" required>
+                                        <option value="">Chọn danh mục</option>
+                                        <option value="thoi-trang">Thời trang</option><option value="giay-dep">Giày dép</option>
+                                        <option value="phu-kien">Phụ kiện</option><option value="dien-tu">Điện tử</option>
+                                        <option value="lam-dep">Làm đẹp</option><option value="nha-cua">Nhà cửa</option>
+                                    </select>
+                                </div>
+                                <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:9px;margin:0">
+                                    <div class="form-field"><label for="import-price">Giá bán (₫) *</label><input id="import-price" class="field-input" type="number" min="1000" step="1000" placeholder="299000" required></div>
+                                    <div class="form-field"><label for="import-stock">Tồn kho *</label><input id="import-stock" class="field-input" type="number" min="0" step="1" placeholder="25" required></div>
+                                </div>
+                                <div class="form-field"><label for="import-description">Mô tả sản phẩm *</label><textarea id="import-description" class="field-input" maxlength="500" placeholder="Mô tả chất liệu, công dụng, đặc điểm..." required></textarea></div>
+                                <div class="form-field"><label for="import-image">Ảnh sản phẩm</label><label class="upload-box" for="import-image">Chọn ảnh từ thiết bị (tối đa 5 MB)<input id="import-image" type="file" accept="image/*"></label></div>
+                                <div class="form-field">
+                                    <label>Tag sản phẩm</label>
+                                    <div id="import-tags" class="tag-editor" aria-live="polite"><span class="tag-empty">AI sẽ đề xuất tag dựa trên nội dung</span></div>
+                                    <div class="tag-add-row"><input id="manual-tag" class="field-input" maxlength="24" placeholder="Thêm tag thủ công" aria-label="Tag tự nhập"><button id="add-tag" class="button" type="button">Thêm</button></div>
+                                    <button id="auto-tag-button" class="button ai-tag-button" type="button">✦ AI gợi ý tag tự động</button>
+                                </div>
+                            </div>
+                            <button class="button primary import-submit" type="submit">＋ Import sản phẩm</button>
+                            <p class="import-note">Gợi ý tag hiện dùng quy tắc demo trên trình duyệt, chưa kết nối AI/API thật. Sản phẩm được thêm vào danh sách trong phiên hiện tại.</p>
+                        </form>
+                    </dialog>
+                </section>
+
+                <section id="view-ai" class="view" aria-labelledby="ai-title">
+                    <div class="page-heading">
+                        <div><h1 id="ai-title">Dự đoán rủi ro trả hàng</h1><p class="subheading">Hệ thống tự động phân tích đơn hàng và ưu tiên các trường hợp có nguy cơ hoàn trả.</p></div>
+                        <span class="demo-tag">✦ Phân tích tự động · dữ liệu demo</span>
+                    </div>
+                    <article class="card auto-analysis">
+                        <div class="auto-analysis-head">
+                            <div>
+                                <h2 class="card-title">Đơn hàng được AI phân tích</h2>
+                                <p class="card-caption">Các đơn mẫu được tự động đánh giá khi mở màn hình.</p>
+                            </div>
+                            <button id="reanalyze-orders" class="button" type="button">↻ Phân tích lại</button>
+                        </div>
+                        <div id="auto-orders" class="auto-orders" aria-live="polite"></div>
+                        <div id="auto-analysis-status" class="auto-analysis-status" role="status">Đang phân tích dữ liệu đơn hàng mẫu…</div>
+                    </article>
+                    <div class="notice"><strong>Lưu ý:</strong> Đây là mô phỏng tự động trên dữ liệu mẫu, chưa kết nối mô hình AI hoặc Backend. Khi có API, kết quả sẽ được lấy từ dịch vụ dự đoán thật.</div>
+                    <details class="manual-check">
+                        <summary><span>Kiểm tra thủ công một đơn hàng</span><span class="card-caption">Tùy chọn · chỉ dùng để kiểm tra nhanh</span></summary>
+                        <div class="manual-check-body">
+                    <div class="form-layout">
+                        <form id="risk-form" class="card card-pad">
+                            <h2 class="card-title">Thông tin đơn hàng</h2>
+                            <p class="card-caption">Tự nhập thông tin để tham khảo mức rủi ro (dữ liệu demo).</p>
+                            <div class="form-field" style="margin-top:19px">
+                                <label for="order-template">Template demo</label>
+                                <select id="order-template" class="select">
+                                    <option value="high">Đơn nguy cơ cao · minh họa Risk Score 78%</option>
+                                    <option value="medium">Đơn nguy cơ trung bình</option>
+                                    <option value="low">Đơn nguy cơ thấp</option>
+                                </select>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-field"><label for="customer-id">Mã khách hàng</label><input id="customer-id" class="field-input" value="CUS-10482" required></div>
+                                <div class="form-field"><label for="product">Sản phẩm</label>
+                                    <select id="product" class="select">
+                                        <option value="30">Áo khoác Urban Fit</option><option value="22">Giày chạy bộ Aero</option><option value="10">Áo thun Essential</option>
+                                    </select>
+                                </div>
+                                <div class="form-field"><label for="order-value">Giá trị đơn hàng (₫)</label><input id="order-value" class="field-input" type="number" min="0" step="10000" value="2000000" required></div>
+                                <div class="form-field"><label for="quantity">Số lượng sản phẩm</label><input id="quantity" class="field-input" type="number" min="1" max="20" value="3" required></div>
+                                <div class="form-field"><label for="past-returns">Số lần trả hàng trước đây</label><input id="past-returns" class="field-input" type="number" min="0" max="10" value="2" required><span class="form-hint">Thông tin lịch sử khách hàng</span></div>
+                                <div class="form-field"><label for="payment-method">Phương thức thanh toán</label><select id="payment-method" class="select"><option>Thanh toán khi nhận hàng (COD)</option><option>Thẻ / Ví điện tử</option></select></div>
+                            </div>
+                            <div style="display:flex;justify-content:flex-end;margin-top:19px">
+                                <button id="predict-button" class="button primary" type="submit">✦ Kiểm tra rủi ro</button>
+                            </div>
+                        </form>
+
+                        <aside class="card result-card" aria-live="polite">
+                            <div class="result-top"><h2 class="card-title">Kết quả dự đoán</h2><p class="card-caption">Phân loại rủi ro hoàn trả đơn hàng</p></div>
+                            <div id="result-empty" class="result-empty"><div class="empty-icon">✦</div><strong>Chưa có kết quả</strong><span>Điền thông tin và nhấn “Kiểm tra rủi ro”.</span></div>
+                            <div id="result-content" class="result-content" hidden>
+                                <div class="risk-score-row"><div><div class="risk-score"><span id="risk-score">78</span><small>%</small></div><div class="card-caption">Risk Score</div></div><span id="risk-badge" class="risk-badge high">RỦI RO CAO</span></div>
+                                <div class="risk-track"><span id="risk-bar" style="width:78%"></span></div>
+                                <div id="risk-message" class="risk-note">Đơn hàng có nguy cơ bị trả lại cao. Cân nhắc xác nhận thông tin đơn trước khi giao.</div>
+                                <ul class="feature-list">
+                                    <li><span>Đơn hàng</span><strong id="result-order">CUS-10482</strong></li>
+                                    <li><span>Tín hiệu nổi bật</span><strong id="result-signal">Lịch sử trả hàng</strong></li>
+                                    <li><span>Thời gian phản hồi</span><strong id="result-time">1,2 giây</strong></li>
+                                </ul>
+                                <div class="notice">Kết quả này được tính bằng logic demo trên trình duyệt, không phải phản hồi từ mô hình/API thật.</div>
+                            </div>
+                        </aside>
+                    </div>
+                        </div>
+                    </details>
+                </section>
+
+                <section id="view-realtime" class="view" aria-labelledby="realtime-title">
+                    <div class="page-heading">
+                        <div><h1 id="realtime-title">Cập nhật số liệu realtime</h1><p class="subheading">Theo dõi thay đổi KPI khi có giao dịch mới phát sinh.</p></div>
+                        <span class="live-tag"><span class="live-dot"></span><span id="sync-label">Sẵn sàng mô phỏng</span></span>
+                    </div>
+                    <div class="realtime-banner">
+                        <div><h2>Luồng giao dịch demo</h2><p>Chế độ này tạo đơn hàng mẫu ngay trong trình duyệt để trình diễn cập nhật giao diện.</p></div>
+                        <div class="realtime-controls"><button id="simulate-order" class="button primary" type="button">＋ Mô phỏng giao dịch mới</button><button id="toggle-auto" class="button" type="button">▶ Bật tự động</button></div>
+                    </div>
+                    <div class="kpi-grid">
+                        <article class="card kpi-card"><div class="kpi-label">Doanh thu ròng hôm nay</div><div class="kpi-value" id="rt-revenue">₫84,6 triệu</div><div class="kpi-foot"><span class="change">●</span>cập nhật trực tiếp</div></article>
+                        <article class="card kpi-card"><div class="kpi-label">Đơn hàng hôm nay</div><div class="kpi-value" id="rt-orders">42</div><div class="kpi-foot"><span class="change">●</span>giao dịch ghi nhận</div></article>
+                        <article class="card kpi-card"><div class="kpi-label">Tỷ lệ trả hàng</div><div class="kpi-value" id="rt-returns">8,4%</div><div class="kpi-foot">trong 30 ngày gần nhất</div></article>
+                        <article class="card kpi-card"><div class="kpi-label">Khách hàng mới</div><div class="kpi-value" id="rt-customers">18</div><div class="kpi-foot">trong ngày hôm nay</div></article>
+                    </div>
+                    <div class="grid-two">
+                        <article class="card card-pad">
+                            <div class="chart-head"><div><h2 class="card-title">Biến động trong phiên demo</h2><p class="card-caption">Mỗi đơn hàng mẫu sẽ làm mới số liệu và biểu đồ</p></div><span class="live-tag"><span class="live-dot"></span>LIVE DEMO</span></div>
+                            <div class="chart-wrap">
+                                <svg class="line-chart" viewBox="0 0 720 205" role="img" aria-label="Biểu đồ giao dịch realtime">
+                                    <g stroke="#edf0f5" stroke-width="1"><line x1="48" y1="24" x2="710" y2="24"/><line x1="48" y1="70" x2="710" y2="70"/><line x1="48" y1="116" x2="710" y2="116"/><line x1="48" y1="162" x2="710" y2="162"/></g>
+                                    <g fill="#8a94a5" font-size="10"><text x="1" y="27">₫100m</text><text x="9" y="73">₫70m</text><text x="9" y="119">₫40m</text><text x="24" y="165">₫0</text></g>
+                                    <path id="rt-chart-area" d="M48 107 L158 94 L268 112 L378 70 L488 83 L598 54 L710 66 L710 162 L48 162 Z" fill="url(#area-fill)"/>
+                                    <polyline id="rt-chart-line" points="48,107 158,94 268,112 378,70 488,83 598,54 710,66" fill="none" stroke="#16a6b6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <g id="rt-chart-points" fill="#fff" stroke="#16a6b6" stroke-width="3"><circle cx="48" cy="107" r="4"/><circle cx="158" cy="94" r="4"/><circle cx="268" cy="112" r="4"/><circle cx="378" cy="70" r="4"/><circle cx="488" cy="83" r="4"/><circle cx="598" cy="54" r="4"/><circle cx="710" cy="66" r="4"/></g>
+                                </svg>
+                                <div class="chart-labels"><span>09:00</span><span>10:00</span><span>11:00</span><span>12:00</span><span>13:00</span><span>14:00</span><span>Hiện tại</span></div>
+                            </div>
+                        </article>
+                        <article class="card card-pad">
+                            <h2 class="card-title">Hoạt động gần đây</h2><p class="card-caption">Giao dịch được ghi nhận trong phiên hiện tại</p>
+                            <div id="event-list" class="event-list" style="margin-top:12px">
+                                <div class="event-row"><span class="event-marker"></span><span>Dashboard đã sẵn sàng · dữ liệu mẫu</span><time>Vừa xong</time></div>
+                            </div>
+                            <div id="updated-at" class="updated">Cập nhật lúc --:--:--</div>
+                        </article>
+                    </div>
+                    <div class="notice">Muốn nhận dữ liệu thật từ script giao dịch/CSDL, cần Backend cung cấp luồng API polling, SSE hoặc WebSocket. Hiện tại nút mô phỏng chỉ cập nhật dữ liệu mẫu phía frontend.</div>
+                </section>
+            </main>
+        </div>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script>
+        const viewTitles = {
+            overview: "Tổng quan kinh doanh",
+            returns: "Trả hàng & sản phẩm",
+            catalog: "Danh mục sản phẩm",
+            ai: "Dự đoán rủi ro trả hàng",
+            realtime: "Cập nhật realtime"
+        };
+        const navButtons = document.querySelectorAll(".nav-button");
+        let autoUpdateTimer = null;
+        let toastTimer = null;
+        let orderCount = 42;
+        let revenue = 84600000;
+        let customers = 18;
+        let chartValues = [52, 61, 48, 69, 63, 82, 75];
+        const sampleOrdersForRisk = [
+            { id: "ORD-2087", product: "Áo khoác Urban Fit", amount: 2000000, quantity: 3, previousReturns: 2, cashOnDelivery: true },
+            { id: "ORD-2091", product: "Giày chạy bộ Aero", amount: 850000, quantity: 2, previousReturns: 1, cashOnDelivery: false },
+            { id: "ORD-2094", product: "Áo thun Essential", amount: 420000, quantity: 1, previousReturns: 0, cashOnDelivery: false }
+        ];
+        const categoryNames = {
+            "thoi-trang": "Thời trang",
+            "giay-dep": "Giày dép",
+            "phu-kien": "Phụ kiện",
+            "dien-tu": "Điện tử",
+            "lam-dep": "Làm đẹp",
+            "nha-cua": "Nhà cửa"
+        };
+        const catalogProducts = [
+            { name: "Áo khoác Urban Fit", category: "thoi-trang", price: 599000, stock: 28, tags: ["Thời trang", "Bán chạy"], emoji: "🧥", rating: "4,9 · 128 lượt bán" },
+            { name: "Giày chạy bộ Aero", category: "giay-dep", price: 890000, stock: 16, tags: ["Giày dép", "Thể thao"], emoji: "👟", rating: "4,8 · 96 lượt bán" },
+            { name: "Túi đeo chéo Metro", category: "phu-kien", price: 349000, stock: 42, tags: ["Phụ kiện", "Tối giản"], emoji: "👜", rating: "4,7 · 74 lượt bán" },
+            { name: "Tai nghe không dây AirBeat", category: "dien-tu", price: 1290000, stock: 12, tags: ["Điện tử", "Không dây"], emoji: "🎧", rating: "4,9 · 203 lượt bán" },
+            { name: "Serum dưỡng ẩm Glow", category: "lam-dep", price: 420000, stock: 35, tags: ["Làm đẹp", "Dưỡng ẩm"], emoji: "🧴", rating: "4,8 · 87 lượt bán" },
+            { name: "Bình giữ nhiệt Everyday", category: "nha-cua", price: 259000, stock: 51, tags: ["Nhà cửa", "Tiện dụng"], emoji: "🥤", rating: "4,6 · 61 lượt bán" }
+        ];
+        let importTags = [];
+        let importedImage = "";
+
+        function showToast(message) {
+            const toast = document.getElementById("toast");
+            toast.textContent = message;
+            toast.classList.add("show");
+            window.clearTimeout(toastTimer);
+            toastTimer = window.setTimeout(() => toast.classList.remove("show"), 2800);
+        }
+
+        function analyzeAutomaticOrders() {
+            const button = document.getElementById("reanalyze-orders");
+            const status = document.getElementById("auto-analysis-status");
+            const list = document.getElementById("auto-orders");
+            button.disabled = true;
+            button.textContent = "Đang phân tích…";
+            status.textContent = "Đang phân tích dữ liệu đơn hàng mẫu…";
+            window.setTimeout(() => {
+                list.replaceChildren();
+                sampleOrdersForRisk.forEach(order => {
+                    const score = Math.min(95, Math.max(5, Math.round(
+                        16
+                        + order.previousReturns * 19
+                        + order.quantity * 5
+                        + (order.cashOnDelivery ? 9 : 0)
+                        + (order.amount > 1500000 ? 8 : 0)
+                    )));
+                    const classification = score >= 70 ? "high" : score >= 40 ? "medium" : "low";
+                    const labels = { high: "RỦI RO CAO", medium: "RỦI RO TRUNG BÌNH", low: "RỦI RO THẤP" };
+                    const row = document.createElement("article");
+                    row.className = "auto-order";
+                    const info = document.createElement("div");
+                    const orderName = document.createElement("div");
+                    orderName.className = "auto-order-name";
+                    orderName.textContent = `${order.id} · ${order.product}`;
+                    const meta = document.createElement("div");
+                    meta.className = "auto-order-meta";
+                    meta.textContent = `${formatPrice(order.amount)} · ${order.quantity} sản phẩm · ${order.previousReturns} lần trả hàng trước`;
+                    info.append(orderName, meta);
+                    const result = document.createElement("div");
+                    result.className = "auto-order-result";
+                    const scoreLabel = document.createElement("strong");
+                    scoreLabel.className = "auto-score";
+                    scoreLabel.textContent = `${score}%`;
+                    const badge = document.createElement("span");
+                    badge.className = `risk-badge ${classification}`;
+                    badge.textContent = labels[classification];
+                    result.append(scoreLabel, badge);
+                    row.append(info, result);
+                    list.append(row);
+                });
+                status.textContent = `Đã tự động phân tích ${sampleOrdersForRisk.length} đơn hàng mẫu · ${new Date().toLocaleTimeString("vi-VN")}`;
+                button.disabled = false;
+                button.textContent = "↻ Phân tích lại";
+            }, 700);
+        }
+
+        function switchView(name) {
+            document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === `view-${name}`));
+            navButtons.forEach(button => button.classList.toggle("active", button.dataset.view === name));
+            document.getElementById("breadcrumb").textContent = viewTitles[name];
+        }
+
+        navButtons.forEach(button => button.addEventListener("click", () => switchView(button.dataset.view)));
+        document.getElementById("reanalyze-orders").addEventListener("click", analyzeAutomaticOrders);
+        document.querySelector('[data-action="refresh"]').addEventListener("click", event => {
+            const button = event.currentTarget;
+            button.disabled = true;
+            button.textContent = "↻ Đang làm mới";
+            window.setTimeout(() => {
+                button.disabled = false;
+                button.textContent = "↻ Làm mới";
+                showToast("Dashboard đã được làm mới từ bộ dữ liệu demo.");
+            }, 550);
+        });
+
+        function formatPrice(value) {
+            return `₫${Number(value).toLocaleString("vi-VN")}`;
+        }
+
+        function renderCatalog() {
+            const search = document.getElementById("catalog-search").value.trim().toLocaleLowerCase("vi");
+            const category = document.getElementById("catalog-filter").value;
+            const filteredProducts = catalogProducts.filter(product => {
+                const matchesSearch = `${product.name} ${categoryNames[product.category]} ${product.tags.join(" ")}`.toLocaleLowerCase("vi").includes(search);
+                return matchesSearch && (!category || product.category === category);
+            });
+            const catalog = document.getElementById("product-catalog");
+            catalog.replaceChildren();
+            document.getElementById("catalog-count").textContent = `${filteredProducts.length} sản phẩm`;
+            if (!filteredProducts.length) {
+                const empty = document.createElement("div");
+                empty.className = "catalog-empty card";
+                empty.textContent = "Không tìm thấy sản phẩm phù hợp.";
+                catalog.append(empty);
+                return;
+            }
+            filteredProducts.forEach(product => {
+                const card = document.createElement("article");
+                card.className = "card store-card";
+                const image = document.createElement("div");
+                image.className = "store-image";
+                const badge = document.createElement("span");
+                badge.className = "store-badge";
+                badge.textContent = product.isNew ? "Mới đăng" : "Sản phẩm nổi bật";
+                image.append(badge);
+                if (product.image) {
+                    const photo = document.createElement("img");
+                    photo.src = product.image;
+                    photo.alt = product.name;
+                    image.append(photo);
+                } else {
+                    const emoji = document.createElement("span");
+                    emoji.className = "store-image-emoji";
+                    emoji.textContent = product.emoji || "📦";
+                    image.append(emoji);
+                }
+                const info = document.createElement("div");
+                info.className = "store-info";
+                const title = document.createElement("h3");
+                title.className = "store-title";
+                title.textContent = product.name;
+                const rating = document.createElement("div");
+                rating.className = "store-rating";
+                rating.textContent = product.rating ? `★★★★★ ${product.rating}` : "Mới · Chưa có đánh giá";
+                const priceRow = document.createElement("div");
+                priceRow.className = "store-price-row";
+                const price = document.createElement("strong");
+                price.className = "store-price";
+                price.textContent = formatPrice(product.price);
+                const stock = document.createElement("span");
+                stock.className = "store-stock";
+                stock.textContent = `Còn ${Number(product.stock).toLocaleString("vi-VN")}`;
+                priceRow.append(price, stock);
+                const tags = document.createElement("div");
+                tags.className = "store-tags";
+                product.tags.forEach(tag => {
+                    const chip = document.createElement("span");
+                    chip.className = "product-tag";
+                    chip.textContent = tag;
+                    tags.append(chip);
+                });
+                info.append(title, rating, priceRow, tags);
+                card.append(image, info);
+                catalog.append(card);
+            });
+        }
+
+        function renderImportTags() {
+            const container = document.getElementById("import-tags");
+            container.replaceChildren();
+            if (!importTags.length) {
+                const empty = document.createElement("span");
+                empty.className = "tag-empty";
+                empty.textContent = "AI sẽ đề xuất tag dựa trên nội dung";
+                container.append(empty);
+                return;
+            }
+            importTags.forEach((tag, index) => {
+                const chip = document.createElement("span");
+                chip.className = "product-tag";
+                chip.append(document.createTextNode(tag));
+                const remove = document.createElement("button");
+                remove.type = "button";
+                remove.setAttribute("aria-label", `Xóa tag ${tag}`);
+                remove.textContent = "×";
+                remove.addEventListener("click", () => {
+                    importTags.splice(index, 1);
+                    renderImportTags();
+                });
+                chip.append(remove);
+                container.append(chip);
+            });
+        }
+
+        function suggestProductTags() {
+            const name = document.getElementById("import-name").value.trim();
+            const category = document.getElementById("import-category").value;
+            const description = document.getElementById("import-description").value.trim();
+            const source = `${name} ${description}`.toLocaleLowerCase("vi")
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
+            const suggestions = category ? [categoryNames[category]] : [];
+            const rules = [
+                ["chong nuoc", "Chống nước"], ["the thao", "Thể thao"], ["chay bo", "Thể thao"],
+                ["cotton", "Cotton"], ["linen", "Linen"], ["da that", "Da thật"],
+                ["khong day", "Không dây"], ["bluetooth", "Bluetooth"], ["duong am", "Dưỡng ẩm"],
+                ["toi gian", "Tối giản"], ["organic", "Thân thiện môi trường"], ["chong nang", "Chống nắng"],
+                ["unisex", "Unisex"], ["hang ngay", "Dùng hằng ngày"]
+            ];
+            rules.forEach(([keyword, tag]) => {
+                if (source.includes(keyword)) suggestions.push(tag);
+            });
+            if (!suggestions.length && source.trim()) suggestions.push("Sản phẩm mới");
+            return [...new Set(suggestions)].slice(0, 5);
+        }
+
+        function addManualTag() {
+            const input = document.getElementById("manual-tag");
+            const value = input.value.trim().replace(/^#/, "");
+            if (!value) return;
+            if (!importTags.some(tag => tag.toLocaleLowerCase("vi") === value.toLocaleLowerCase("vi"))) {
+                importTags.push(value);
+                renderImportTags();
+            }
+            input.value = "";
+        }
+
+        document.getElementById("catalog-search").addEventListener("input", renderCatalog);
+        document.getElementById("catalog-filter").addEventListener("change", renderCatalog);
+        const productImportDialog = document.getElementById("product-import-dialog");
+        document.getElementById("open-product-import").addEventListener("click", () => {
+            productImportDialog.showModal();
+            document.getElementById("import-name").focus();
+        });
+        document.getElementById("close-product-import").addEventListener("click", () => productImportDialog.close());
+        productImportDialog.addEventListener("cancel", event => {
+            event.preventDefault();
+            productImportDialog.close();
+        });
+        productImportDialog.addEventListener("click", event => {
+            if (event.target === productImportDialog) productImportDialog.close();
+        });
+        document.getElementById("auto-tag-button").addEventListener("click", () => {
+            importTags = [...new Set([...suggestProductTags(), ...importTags])].slice(0, 5);
+            renderImportTags();
+            showToast(importTags.length ? "Đã gợi ý tag sản phẩm bằng logic demo." : "Nhập tên, danh mục hoặc mô tả để gợi ý tag.");
+        });
+        document.getElementById("add-tag").addEventListener("click", addManualTag);
+        document.getElementById("manual-tag").addEventListener("keydown", event => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                addManualTag();
+            }
+        });
+        document.getElementById("import-image").addEventListener("change", event => {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
+                event.target.value = "";
+                showToast("Vui lòng chọn tệp ảnh có dung lượng tối đa 5 MB.");
+                return;
+            }
+            const reader = new FileReader();
+            reader.addEventListener("load", () => {
+                importedImage = reader.result;
+                showToast("Đã tải ảnh xem trước cho sản phẩm.");
+            });
+            reader.addEventListener("error", () => showToast("Không thể đọc ảnh đã chọn. Vui lòng thử lại."));
+            reader.readAsDataURL(file);
+        });
+        document.getElementById("product-import-form").addEventListener("submit", event => {
+            event.preventDefault();
+            const form = event.currentTarget;
+            if (!form.reportValidity()) return;
+            const name = document.getElementById("import-name").value.trim();
+            const category = document.getElementById("import-category").value;
+            const description = document.getElementById("import-description").value.trim();
+            const tags = importTags.length ? [...importTags] : suggestProductTags();
+            catalogProducts.unshift({
+                name,
+                category,
+                price: Number(document.getElementById("import-price").value),
+                stock: Number(document.getElementById("import-stock").value),
+                description,
+                tags,
+                image: importedImage,
+                isNew: true
+            });
+            renderCatalog();
+            form.reset();
+            importTags = [];
+            importedImage = "";
+            renderImportTags();
+            productImportDialog.close();
+            showToast(`Đã import “${name}” vào danh mục sản phẩm.`);
+        });
+        renderCatalog();
+
+        document.getElementById("order-template").addEventListener("change", event => {
+            const templates = {
+                high: { value: 2000000, quantity: 3, returns: 2, product: "30", customer: "CUS-10482" },
+                medium: { value: 950000, quantity: 2, returns: 1, product: "22", customer: "CUS-20317" },
+                low: { value: 420000, quantity: 1, returns: 0, product: "10", customer: "CUS-31006" }
+            };
+            const data = templates[event.target.value];
+            document.getElementById("order-value").value = data.value;
+            document.getElementById("quantity").value = data.quantity;
+            document.getElementById("past-returns").value = data.returns;
+            document.getElementById("product").value = data.product;
+            document.getElementById("customer-id").value = data.customer;
+        });
+
+        document.getElementById("risk-form").addEventListener("submit", event => {
+            event.preventDefault();
+            const form = event.currentTarget;
+            if (!form.reportValidity()) return;
+            const button = document.getElementById("predict-button");
+            button.disabled = true;
+            button.textContent = "Đang phân tích…";
+            window.setTimeout(() => {
+                const template = document.getElementById("order-template").value;
+                const baselines = {
+                    high: { score: 78, value: 2000000, quantity: 3, returns: 2, product: 30 },
+                    medium: { score: 52, value: 950000, quantity: 2, returns: 1, product: 22 },
+                    low: { score: 18, value: 420000, quantity: 1, returns: 0, product: 10 }
+                };
+                const baseline = baselines[template];
+                const amount = Number(document.getElementById("order-value").value);
+                const quantity = Number(document.getElementById("quantity").value);
+                const previousReturns = Number(document.getElementById("past-returns").value);
+                const productSelect = document.getElementById("product");
+                const paymentMethod = document.getElementById("payment-method").selectedIndex;
+                const paymentAdjustment = paymentMethod === 0 ? 0 : -2;
+                const score = Math.max(5, Math.min(95, Math.round(
+                    baseline.score
+                    + (quantity - baseline.quantity) * 4
+                    + (previousReturns - baseline.returns) * 7
+                    + ((amount - baseline.value) / 2500000) * 8
+                    + (Number(productSelect.value) - baseline.product) * 0.4
+                    + paymentAdjustment
+                )));
+                const customer = document.getElementById("customer-id").value.trim();
+                const badge = document.getElementById("risk-badge");
+                const scoreNode = document.getElementById("risk-score");
+                const bar = document.getElementById("risk-bar");
+                const message = document.getElementById("risk-message");
+                const signal = document.getElementById("result-signal");
+                const signalText = template === "high" ? "Lịch sử trả hàng" : template === "medium" ? "Giá trị đơn & số lượng" : "Lịch sử giao dịch tốt";
+                const classification = score >= 70 ? "high" : score >= 40 ? "medium" : "low";
+                const labels = { high: "RỦI RO CAO", medium: "RỦI RO TRUNG BÌNH", low: "RỦI RO THẤP" };
+                const messages = {
+                    high: "Đơn hàng có nguy cơ bị trả lại cao. Cân nhắc xác nhận thông tin đơn trước khi giao.",
+                    medium: "Đơn hàng có mức rủi ro trung bình. Nên theo dõi trạng thái giao hàng.",
+                    low: "Đơn hàng có nguy cơ trả hàng thấp theo bộ dữ liệu demo."
+                };
+                scoreNode.textContent = score;
+                badge.textContent = labels[classification];
+                badge.className = `risk-badge ${classification}`;
+                bar.style.width = `${score}%`;
+                bar.style.background = classification === "high" ? "var(--red)" : classification === "medium" ? "var(--amber)" : "var(--green)";
+                message.textContent = messages[classification];
+                signal.textContent = signalText;
+                document.getElementById("result-order").textContent = customer || productSelect.selectedOptions[0].text;
+                document.getElementById("result-time").textContent = "1,2 giây";
+                document.getElementById("result-empty").hidden = true;
+                document.getElementById("result-content").hidden = false;
+                button.disabled = false;
+                button.textContent = "✦ Kiểm tra rủi ro";
+            }, 1200);
+        });
+
+        function formatMillions(value) {
+            return `₫${(value / 1000000).toFixed(1).replace(".", ",")} triệu`;
+        }
+
+        function renderRealtimeChart() {
+            const points = chartValues.map((value, index) => {
+                const x = 48 + index * (662 / (chartValues.length - 1));
+                const y = 162 - (value / 100) * 138;
+                return `${x.toFixed(1)},${y.toFixed(1)}`;
+            });
+            document.getElementById("rt-chart-line").setAttribute("points", points.join(" "));
+            document.getElementById("rt-chart-area").setAttribute("d", `M${points[0].replace(",", " ")} L${points.slice(1).map(point => point.replace(",", " ")).join(" L")} L710 162 L48 162 Z`);
+            document.getElementById("rt-chart-points").innerHTML = points.map(point => {
+                const [x, y] = point.split(",");
+                return `<circle cx="${x}" cy="${y}" r="4"/>`;
+            }).join("");
+        }
+
+        function simulateOrder() {
+            const amount = Math.floor(850000 + Math.random() * 2350000);
+            orderCount += 1;
+            revenue += amount;
+            if (Math.random() > .55) customers += 1;
+            chartValues = chartValues.slice(1).concat(Math.min(98, chartValues[chartValues.length - 1] + 4 + Math.floor(Math.random() * 13)));
+            document.getElementById("rt-revenue").textContent = formatMillions(revenue);
+            document.getElementById("rt-orders").textContent = orderCount.toLocaleString("vi-VN");
+            document.getElementById("rt-customers").textContent = customers.toLocaleString("vi-VN");
+            document.getElementById("customer-count").textContent = (1026 + customers - 18).toLocaleString("vi-VN");
+            document.getElementById("net-revenue").textContent = `₫${(2.48 + (revenue - 84600000) / 2480000000).toFixed(2).replace(".", ",")} tỷ`;
+            document.getElementById("chart-total").innerHTML = `${document.getElementById("net-revenue").textContent}<span>Tổng doanh thu ròng trong kỳ</span>`;
+            document.getElementById("order-count").textContent = (1284 + orderCount - 42).toLocaleString("vi-VN");
+            renderRealtimeChart();
+            const now = new Date();
+            const time = now.toLocaleTimeString("vi-VN");
+            document.getElementById("updated-at").textContent = `Cập nhật lúc ${time}`;
+            const row = document.createElement("div");
+            row.className = "event-row";
+            const marker = document.createElement("span");
+            marker.className = "event-marker";
+            const label = document.createElement("span");
+            label.textContent = `Đơn hàng demo mới · ${formatMillions(amount)}`;
+            const timestamp = document.createElement("time");
+            timestamp.textContent = time;
+            row.append(marker, label, timestamp);
+            const list = document.getElementById("event-list");
+            list.prepend(row);
+            while (list.children.length > 5) list.lastElementChild.remove();
+            document.getElementById("sync-label").textContent = "Vừa cập nhật";
+            showToast(`Đã ghi nhận đơn demo ${formatMillions(amount)} · KPI vừa cập nhật.`);
+        }
+
+        document.getElementById("simulate-order").addEventListener("click", simulateOrder);
+        document.getElementById("toggle-auto").addEventListener("click", event => {
+            const button = event.currentTarget;
+            if (autoUpdateTimer) {
+                window.clearInterval(autoUpdateTimer);
+                autoUpdateTimer = null;
+                button.textContent = "▶ Bật tự động";
+                document.getElementById("sync-label").textContent = "Đã tạm dừng";
+                showToast("Đã tạm dừng mô phỏng tự động.");
+                return;
+            }
+            autoUpdateTimer = window.setInterval(simulateOrder, 7000);
+            button.textContent = "Ⅱ Tạm dừng";
+            document.getElementById("sync-label").textContent = "Tự động · mỗi 7 giây";
+            showToast("Đang mô phỏng một giao dịch mới sau mỗi 7 giây.");
+        });
+
+        document.getElementById("updated-at").textContent = `Cập nhật lúc ${new Date().toLocaleTimeString("vi-VN")}`;
+        analyzeAutomaticOrders();
+    </script>
+</body>
+</html>
